@@ -1,0 +1,105 @@
+package com.rumaruka.tcraft.init;
+
+import com.google.common.base.Strings;
+import com.google.common.collect.ObjectArrays;
+import com.rumaruka.tcraft.common.blocks.BasicBlock;
+import com.rumaruka.tcraft.core.misc.CoreMisc;
+import net.minecraft.block.Block;
+import net.minecraft.block.material.Material;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.block.model.ModelResourceLocation;
+import net.minecraft.init.Blocks;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemBlock;
+import net.minecraftforge.fml.common.FMLLog;
+import net.minecraftforge.fml.common.Loader;
+import net.minecraftforge.fml.common.LoaderException;
+import net.minecraftforge.fml.common.LoaderState;
+import net.minecraftforge.fml.common.registry.ForgeRegistries;
+import org.apache.logging.log4j.Level;
+
+import java.lang.reflect.Constructor;
+
+import static com.rumaruka.tcraft.common.blocks.BasicBlock.LevelEnum.*;
+import static com.rumaruka.tcraft.common.blocks.BasicBlock.ToolEnum.*;
+
+public class BlockInit {
+
+    //Ore
+
+    public static BasicBlock oreTime;
+    //Decor
+
+    //Basic Mech
+
+
+
+    //Registering
+    public static void init(){
+        oreTime = new BasicBlock(Material.ROCK,"oreTime",3.4f).generatedBlock(Blocks.STONE,20,40,4,3).setHarvertLevel(PICKAXE, IRON);
+    }
+    public static void InGameRegister() {
+
+        registerBlock(oreTime,oreTime.getUnlocalizedName().substring(5));
+    }
+
+    public static void Render() {
+        registerRender(oreTime);
+
+    }
+
+    //Api
+    @Deprecated
+    public static Block registerBlock(Block block) {
+        ForgeRegistries.BLOCKS.register(block);
+        ForgeRegistries.ITEMS.register(new ItemBlock(block).setRegistryName(block.getRegistryName()));
+        return block;
+    }
+
+    @Deprecated
+    public static Block registerBlock(Block block, String name) {
+        if (block.getRegistryName() == null && Strings.isNullOrEmpty(name))
+            throw new IllegalArgumentException("Attempted to register a Block with no name: " + block);
+        if (block.getRegistryName() != null && !block.getRegistryName().toString().equals(name))
+            throw new IllegalArgumentException("Attempted to register a Block with conflicting names. Old: " + block.getRegistryName() + " New: " + name);
+        return registerBlock(block.getRegistryName() != null ? block : block.setRegistryName(name));
+    }
+
+    @Deprecated
+    public static Block registerBlock(Block block, Class<? extends ItemBlock> itemclass, String name, Object... itemCtorArgs) {
+        if (Strings.isNullOrEmpty(name)) {
+            throw new IllegalArgumentException("Attempted to register a block with no name: " + block);
+        }
+        if (Loader.instance().isInState(LoaderState.CONSTRUCTING)) {
+            FMLLog.warning("The mod %s is attempting to register a block whilst it it being constructed. This is bad modding practice - please use a proper mod lifecycle event.", Loader.instance().activeModContainer());
+        }
+        try {
+            assert block != null : "registerBlock: block cannot be null";
+            if (block.getRegistryName() != null && !block.getRegistryName().toString().equals(name))
+                throw new IllegalArgumentException("Attempted to register a Block with conflicting names. Old: " + block.getRegistryName() + " New: " + name);
+            ItemBlock i = null;
+            if (itemclass != null) {
+                Class<?>[] ctorArgClasses = new Class<?>[itemCtorArgs.length + 1];
+                ctorArgClasses[0] = Block.class;
+                for (int idx = 1; idx < ctorArgClasses.length; idx++) {
+                    ctorArgClasses[idx] = itemCtorArgs[idx - 1].getClass();
+                }
+                Constructor<? extends ItemBlock> itemCtor = itemclass.getConstructor(ctorArgClasses);
+                i = itemCtor.newInstance(ObjectArrays.concat(block, itemCtorArgs));
+            }
+            // block registration has to happen first
+            ForgeRegistries.BLOCKS.register(block.getRegistryName() == null ? block.setRegistryName(name) : block);
+            if (i != null)
+                ForgeRegistries.ITEMS.register(i.setRegistryName(name));
+            return block;
+        } catch (Exception e) {
+            FMLLog.log(Level.ERROR, e, "Caught an exception during block registration");
+            throw new LoaderException(e);
+        }
+    }
+    public static void registerRender(Block block) {
+        Item item = Item.getItemFromBlock(block);
+        Minecraft.getMinecraft().getRenderItem().getItemModelMesher().register(item, 0, new ModelResourceLocation(CoreMisc.MODID + ":" + item.getUnlocalizedName().substring(5), "inventory"));
+    }
+
+}

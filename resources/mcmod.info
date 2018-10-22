@@ -1,0 +1,16 @@
+[
+{
+  "modid": "tcraft",
+  "name": "TimeCraft",
+  "description": "Advanced mod about manipulation times, space and reality",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["Rumaruka"],
+  "credits": "The Forge and FML guys, for making this example",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
